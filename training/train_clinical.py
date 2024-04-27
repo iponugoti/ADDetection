@@ -15,7 +15,6 @@ from tensorflow.keras.models import Sequential
 import math as math
 
 
-
 def reset_random_seeds(seed):
     os.environ['PYTHONHASHSEED']=str(seed)
     tf.random.set_seed(seed)
@@ -25,11 +24,20 @@ def reset_random_seeds(seed):
 
 def main():
     #this is created in the clinical preprocess jupyter notebook
+<<<<<<< HEAD
     X_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_train_c.pkl")
     y_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_train_c.pkl")
 
     X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
     y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
+=======
+    print(os.getcwd())
+    X_train = pd.read_pickle("/Users/ishaponugoti/Desktop/DL AD/ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_train = pd.read_pickle("/Users/ishaponugoti/Desktop/DL AD/ADDetection/preprocess_clinical/y_train_c.pkl")
+
+    X_test = pd.read_pickle("/Users/ishaponugoti/Desktop/DL AD/ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("/Users/ishaponugoti/Desktop/DL AD/ADDetection/preprocess_clinical/y_test_c.pkl")
+>>>>>>> 07691dfbed699c399e7f68f9f0e18da67765d798
 
     acc = []
     f1 = []
@@ -56,12 +64,12 @@ def main():
         
         model.summary()
         
-        for row in range(len(X_train)):
-            for col in range(len(X_train[0])):
-                # print(math.isnan(X_train[row, col]))
-                print(X_train[row, col])
 
 
+
+        X_train = X_train.replace({True: 1, False: 0, np.NAN: 0})
+        y_train = y_train.replace({True: 1, False: 0, np.NAN: 0})
+       
         history = model.fit(X_train, y_train,  epochs=100, validation_split=0.1, batch_size=32,verbose=1) 
 
         score = model.evaluate(X_test, y_test, verbose=0)
