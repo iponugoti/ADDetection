@@ -18,16 +18,16 @@ def reset_random_seeds(seed):
 
 def main():
     # Load data
-    X_train = pd.read_pickle("X_train_c.pkl")
-    y_train = pd.read_pickle("y_train_c.pkl")
-    X_test = pd.read_pickle("X_test_c.pkl")
-    y_test = pd.read_pickle("y_test_c.pkl")
+    X_train = pd.read_pickle("ADDetection/preprocess_clinical/X_train_c.pkl")
+    y_train = pd.read_pickle("ADDetection/preprocess_clinical/y_train_c.pkl")
+    X_test = pd.read_pickle("ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("ADDetection/preprocess_clinical/y_test_c.pkl")
 
     # Convert to PyTorch tensors
-    X_train_tensor = torch.tensor(X_train.values.astype(np.float32))
-    y_train_tensor = torch.tensor(y_train.values.astype(np.int64))
-    X_test_tensor = torch.tensor(X_test.values.astype(np.float32))
-    y_test_tensor = torch.tensor(y_test.values.astype(np.int64))
+    X_train_tensor = torch.from_numpy(X_train.astype(np.float32))
+    y_train_tensor = torch.from_numpy(y_train.astype(np.float32))
+    X_test_tensor = torch.from_numpy(X_test.astype(np.float32))
+    y_test_tensor = torch.from_numpy(y_test.astype(np.float32))
 
     acc = []
     f1 = []
@@ -37,7 +37,7 @@ def main():
     for seed in seeds:
         reset_random_seeds(seed)
         model = nn.Sequential(
-            nn.Linear(185, 128),
+            nn.Linear(101, 128),
             nn.ReLU(),
             nn.BatchNorm1d(128),
             nn.Dropout(0.5),
@@ -50,7 +50,7 @@ def main():
             nn.BatchNorm1d(50),
             nn.Dropout(0.2),
             nn.Linear(50, 3),
-            nn.Softmax(dim=1)
+            nn.Softmax()
         )
 
 
@@ -61,7 +61,15 @@ def main():
             model.train()
             optimizer.zero_grad()
             outputs = model(X_train_tensor)
-            loss = loss_function(outputs, y_train_tensor)
+            # print(X_train_tensor)
+            # print(X_train)
+
+            # print("y: ", y_train_tensor)
+            # print("no tensor", y_train)
+            print(torch.max(X_train_tensor))
+            print(torch.min(X_train_tensor))
+            # print("outputs: ", outputs)
+            loss = loss_function(outputs.type(torch.LongTensor), torch.LongTensor(y_train_tensor))
             loss.backward()
             optimizer.step()
 
