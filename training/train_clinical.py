@@ -12,6 +12,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report
 from tensorflow.keras.models import Sequential
+import math as math
 
 
 
@@ -24,11 +25,11 @@ def reset_random_seeds(seed):
 
 def main():
     #this is created in the clinical preprocess jupyter notebook
-    X_train = pd.read_pickle("ADDetection/preprocess_clinical/X_train_c.pkl")
-    y_train = pd.read_pickle("ADDetection/preprocess_clinical/y_train_c.pkl")
+    X_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_train_c.pkl")
+    y_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_train_c.pkl")
 
-    X_test = pd.read_pickle("ADDetection/preprocess_clinical/X_test_c.pkl")
-    y_test = pd.read_pickle("ADDetection/preprocess_clinical/y_test_c.pkl")
+    X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
 
     acc = []
     f1 = []
@@ -55,7 +56,12 @@ def main():
         
         model.summary()
         
-       
+        for row in range(len(X_train)):
+            for col in range(len(X_train[0])):
+                # print(math.isnan(X_train[row, col]))
+                print(X_train[row, col])
+
+
         history = model.fit(X_train, y_train,  epochs=100, validation_split=0.1, batch_size=32,verbose=1) 
 
         score = model.evaluate(X_test, y_test, verbose=0)
