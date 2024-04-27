@@ -1,0 +1,19 @@
+
+VCFtools - 0.1.17
+(C) Adam Auton and Anthony Marcketta 2009
+
+Parameters as interpreted:
+	--gzvcf /Users/timothypyon/Desktop/DL_Project/snps/006_007_snps/006_S_0731_SNPs.vcf
+	--maf 0.01
+	--max-alleles 2
+	--minGQ 20
+	--hwe 0.05
+	--max-missing 0.95
+	--recode
+	--stdout
+
+Using zlib version: 1.2.12
+After filtering, kept 2 out of 2 Individuals
+Outputting VCF file...
+After filtering, kept 2201042 out of a possible 3922792 Sites
+Run Time = 11.00 seconds

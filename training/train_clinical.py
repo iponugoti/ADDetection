@@ -24,11 +24,11 @@ def reset_random_seeds(seed):
 
 def main():
     #this is created in the clinical preprocess jupyter notebook
-    X_train = pd.read_pickle("X_train_c.pkl")
-    y_train = pd.read_pickle("y_train_c.pkl")
+    X_train = pd.read_pickle("ADDetection/preprocess_clinical/X_train_c.pkl")
+    y_train = pd.read_pickle("ADDetection/preprocess_clinical/y_train_c.pkl")
 
-    X_test = pd.read_pickle("X_test_c.pkl")
-    y_test = pd.read_pickle("y_test_c.pkl")
+    X_test = pd.read_pickle("ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("ADDetection/preprocess_clinical/y_test_c.pkl")
 
     acc = []
     f1 = []
