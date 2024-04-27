@@ -35,12 +35,11 @@ def in_between(position, relevent):
 def main():
     
     
-    genes = pd.read_csv("gene_list.csv")
-    files = os.listdir("YOUR_PATH_TO_VCFS")
-    
+    genes = pd.read_csv("/Users/timothypyon/Desktop/DL_Project/code/ADDetection/preprocess_genetic/gene_list.csv")
+    files = os.listdir("/Users/timothypyon/Desktop/DL_Project/snps/gzips/")
     
     for vcf_file in files:
-        file_name = "YOUR_PATH_TO_VCFS" + vcf_file
+        file_name = "/Users/timothypyon/Desktop/DL_Project/snps/gzips/" + vcf_file
         
         output_file = open('log.txt','a')
         output_file.write(file_name)
