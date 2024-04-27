@@ -18,11 +18,12 @@ def reset_random_seeds(seed):
 
 def main():
     # Load data
-    X_train = pd.read_pickle("ADDetection/preprocess_clinical/X_train_c.pkl")
-    y_train = pd.read_pickle("ADDetection/preprocess_clinical/y_train_c.pkl")
-    X_test = pd.read_pickle("ADDetection/preprocess_clinical/X_test_c.pkl")
-    y_test = pd.read_pickle("ADDetection/preprocess_clinical/y_test_c.pkl")
+    X_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_train_c.pkl")
+    y_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_train_c.pkl")
+    X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
 
+    print(X_train)
     # Convert to PyTorch tensors
     X_train_tensor = torch.from_numpy(X_train.astype(np.float32))
     y_train_tensor = torch.from_numpy(y_train.astype(np.float32))
