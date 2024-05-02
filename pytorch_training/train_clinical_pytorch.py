@@ -12,7 +12,7 @@ from sklearn.metrics import classification_report
 
 def reset_random_seeds(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
-    torch.manual_seed(seed)
+    torch.random.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
@@ -23,16 +23,17 @@ def main():
     X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
     y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
 
-    # Convert to PyTorch tensors
-    # X_train_tensor = torch.tensor(X_train.astype(np.float32))
-    # y_train_tensor = torch.from_numpy(y_train.astype(np.float32))
-    # X_test_tensor = torch.from_numpy(X_test.astype(np.float32))
-    # y_test_tensor = torch.from_numpy(y_test.astype(np.float32))
+    X_train_post = X_train.replace({True: 1, False: 0, np.NAN: 0})
+    y_train_post = y_train.replace({True: 1, False: 0.0, np.NAN: 0})
 
-    X_train_tensor = torch.tensor(X_train.values.astype(np.float32))
-    y_train_tensor = torch.tensor(y_train.values.astype(np.float32))
-    X_test_tensor = torch.tensor(X_test.values.astype(np.float32))
-    y_train_tensor = torch.tensor(y_train.values.astype(np.float32))
+    X_test_post = X_test.replace({True: 1, False: 0, np.NAN: 0})
+    y_test_post = y_test.replace({True: 1, False: 0.0, np.NAN: 0})
+
+    X_train_tensor = torch.tensor(X_train_post.values.astype(np.float32), requires_grad=True)
+    y_train_tensor = torch.tensor(y_train_post.values.astype(np.float32), requires_grad=True)
+    X_test_tensor = torch.tensor(X_test_post.values.astype(np.float32), requires_grad=False)
+    y_test_tensor = torch.tensor(y_test_post.values.astype(np.float32), requires_grad=False)
+
 
     acc = []
     f1 = []
@@ -42,11 +43,11 @@ def main():
     for seed in seeds:
         reset_random_seeds(seed)
         model = nn.Sequential(
-            nn.Linear(101, 128),
+            nn.Linear(100, 84),
             nn.ReLU(),
-            nn.BatchNorm1d(128),
+            nn.BatchNorm1d(84),
             nn.Dropout(0.5),
-            nn.Linear(128, 64),
+            nn.Linear(84, 64),
             nn.ReLU(),
             nn.BatchNorm1d(64),
             nn.Dropout(0.3),
@@ -55,41 +56,44 @@ def main():
             nn.BatchNorm1d(50),
             nn.Dropout(0.2),
             nn.Linear(50, 3),
-            nn.Softmax()
+            nn.Softmax(dim=1)
         )
 
 
         optimizer = optim.Adam(model.parameters(), lr=0.0001)
         loss_function = nn.CrossEntropyLoss()
+        # loss_function = nn.NLLLoss()
 
         for epoch in range(100):
-            model.train()
-            optimizer.zero_grad()
+            model.train(True)
+            optimizer.zero_grad()            
             outputs = model(X_train_tensor)
-            # print("X: ", X_train_tensor)
-            print(X_train)
+            loss = loss_function(outputs, torch.flatten(y_train_tensor.long()))
+            # loss = loss_function(outputs.type(torch.LongTensor), torch.flatten(y_train_tensor.type(torch.LongTensor)))
+            # loss = loss_function(outputs.type(torch.FloatTensor), torch.flatten(y_train_tensor.type(torch.FloatTensor)))
 
-            print("y: ", y_train_tensor)
-            # print("no tensor", y_train)
-            print(torch.max(X_train_tensor))
-            print(torch.min(X_train_tensor))
-            print("outputs: ", outputs)
-            loss = loss_function(outputs.type(torch.LongTensor), torch.LongTensor(y_train_tensor))
             loss.backward()
             optimizer.step()
 
         model.eval()
         with torch.no_grad():
-            outputs = model(X_test_tensor)
-            _, predicted = torch.max(outputs, 1)
+            voutputs = model(X_test_tensor)
+            _, predicted = torch.max(voutputs, 1)
             total = predicted.size(0)
-            correct = (predicted == y_test).sum().item()
+            count = 0
+            num_right = 0
+            for x in predicted:
+                if x == y_test_tensor[count]:
+                    num_right+=1
+                count+=1
+            correct = num_right
+            # correct = (predicted == y_test_tensor).sum().item()
             acc.append(correct / total)
 
-        cr = classification_report(y_test_tensor.numpy(), predicted.numpy(), output_dict=True)
-        precision.append(cr["macro avg"]["precision"])
-        recall.append(cr["macro avg"]["recall"])
-        f1.append(cr["macro avg"]["f1-score"])
+            cr = classification_report(y_test_tensor.numpy(), predicted.numpy(), output_dict=True)
+            precision.append(cr["macro avg"]["precision"])
+            recall.append(cr["macro avg"]["recall"])
+            f1.append(cr["macro avg"]["f1-score"])
 
     print("Avg accuracy:", np.mean(acc))
     print("Avg precision:", np.mean(precision))
