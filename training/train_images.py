@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import pandas as pd
-import pickle5 as pickle
+# import pickle5 as pickle
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
@@ -25,19 +25,23 @@ def reset_random_seeds(seed):
 def main():
     
     with open("img_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
+        # data = pickle.load(fh)
+        data = pd.read_pickle(fh)
     X_train_ = pd.DataFrame(data)["img_array"] 
     
     with open("img_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
+        # data = pickle.load(fh)
+        data = pd.read_pickle(fh)
     X_test_ = pd.DataFrame(data)["img_array"]
     
     with open("img_y_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
+        # data = pickle.load(fh)
+        data = pd.read_pickle(fh)
     y_train = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
     
     with open("img_y_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
+        # data = pickle.load(fh)
+        data = pd.read_pickle(fh)
     y_test = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
     
 
