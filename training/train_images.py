@@ -23,7 +23,6 @@ def reset_random_seeds(seed):
 
 
 def main():
-    
     X_train_ = pd.read_pickle("img_train.pkl")
     X_train_ = pd.DataFrame(X_train_)["img_array"]
 

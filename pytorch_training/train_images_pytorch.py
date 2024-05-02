@@ -17,21 +17,17 @@ def reset_random_seeds(seed):
     random.seed(seed)
 
 def main():
-    with open("img_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
-    X_train_ = pd.DataFrame(data)["img_array"]
+    X_train_ = pd.read_pickle("img_train.pkl")
+    X_train_ = pd.DataFrame(X_train_)["img_array"]
 
-    with open("img_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
-    X_test_ = pd.DataFrame(data)["img_array"]
+    X_test_ = pd.read_pickle("img_test.pkl")
+    X_test_ = pd.DataFrame(X_test_)["img_array"]
 
-    with open("img_y_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
-    y_train = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
+    y_train = pd.read_pickle("img_y_train.pkl")
+    y_train = y_train["label"].astype(np.float32).values.flatten()
 
-    with open("img_y_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
-    y_test = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
+    y_test = pd.read_pickle("img_y_test.pkl")
+    y_test = y_test["label"].astype(np.float32).values.flatten()
 
     y_test[y_test == 2] = -1
     y_test[y_test == 1] = 2
@@ -41,8 +37,13 @@ def main():
     y_train[y_train == 1] = 2
     y_train[y_train == -1] = 1
 
-    X_train = torch.stack([torch.Tensor(i) for i in X_train_])
-    X_test = torch.stack([torch.Tensor(i) for i in X_test_])
+    # X_train = torch.stack([torch.Tensor(i) for i in X_train_])
+    # X_test = torch.stack([torch.Tensor(i) for i in X_test_])
+    X_train = torch.stack([torch.Tensor(i).permute(2, 0, 1) for i in X_train_]) / 255.0 # normalize
+    X_test = torch.stack([torch.Tensor(i).permute(2, 0, 1) for i in X_test_]) / 255.0
+
+    y_train = torch.tensor(y_train, dtype=torch.long)
+    y_test = torch.tensor(y_test, dtype=torch.long)
 
     acc = []
     f1 = []
