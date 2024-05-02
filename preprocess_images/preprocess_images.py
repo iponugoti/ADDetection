@@ -40,16 +40,16 @@ def create_dataset(meta, meta_all,path_to_datadir):
             
 
     meta_all.to_pickle("mri_meta.pkl")
-    meta_all.flush()
-    os.fsync(meta_all.fileno())
+    # meta_all.flush()
+    # os.fsync(meta_all.fileno())
     time.sleep(0.5)
 
 
 
 def main():
     args = sys.argv[1:]
-    path_to_meta = args[0] 
-    path_to_datadir = args[1]
+    path_to_meta = "/Users/karisma/Desktop/browncs/cs1470/ADDetection/preprocess_images/image_metadata.csv" 
+    path_to_datadir = "/Users/karisma/Desktop/browncs/cs1470/ADDetection/preprocess_images/MRI_Grepped"
     print(path_to_meta)
 
  
