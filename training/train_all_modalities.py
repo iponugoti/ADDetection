@@ -144,16 +144,16 @@ def self_attention(x):
     return attention
     
 
-def multi_modal_model(mode, train_clinical, train_snp, train_img):
+def multi_modal_model(mode, train_clinical, train_img):
     
     in_clinical = Input(shape=(train_clinical.shape[1]))
     
-    in_snp = Input(shape=(train_snp.shape[1]))
+    # in_snp = Input(shape=(train_snp.shape[1]))
     
     in_img = Input(shape=(train_img.shape[1], train_img.shape[2], train_img.shape[3]))
     
     dense_clinical = create_model_clinical()(in_clinical)
-    dense_snp = create_model_snp()(in_snp) 
+    # dense_snp = create_model_snp()(in_snp) 
     dense_img = create_model_img()(in_img) 
     
  
@@ -165,10 +165,10 @@ def multi_modal_model(mode, train_clinical, train_snp, train_img):
     if mode == 'MM_BA':
             
         vt_att = cross_modal_attention(dense_img, dense_clinical)
-        av_att = cross_modal_attention(dense_snp, dense_img)
-        ta_att = cross_modal_attention(dense_clinical, dense_snp)
+        # av_att = cross_modal_attention(dense_snp, dense_img)
+        # ta_att = cross_modal_attention(dense_clinical, dense_snp)
                 
-        merged = concatenate([vt_att, av_att, ta_att, dense_img, dense_snp, dense_clinical])
+        merged = concatenate([vt_att, av_att, ta_att, dense_img, dense_clinical])
                  
    
         
@@ -178,28 +178,28 @@ def multi_modal_model(mode, train_clinical, train_snp, train_img):
             
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        aa_att = self_attention(dense_snp)
+        # aa_att = self_attention(dense_snp)
             
-        merged = concatenate([aa_att, vv_att, tt_att, dense_img, dense_snp, dense_clinical])
+        merged = concatenate([vv_att, tt_att, dense_img, dense_clinical])
         
     ## Self Attention and Cross Modal Bi-directional Attention##
     elif mode == 'MM_SA_BA':
             
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        aa_att = self_attention(dense_snp)
+        # aa_att = self_attention(dense_snp)
         
         vt_att = cross_modal_attention(vv_att, tt_att)
-        av_att = cross_modal_attention(aa_att, vv_att)
-        ta_att = cross_modal_attention(tt_att, aa_att)
+        # av_att = cross_modal_attention(aa_att, vv_att)
+        # ta_att = cross_modal_attention(tt_att, aa_att)
             
-        merged = concatenate([vt_att, av_att, ta_att, dense_img, dense_snp, dense_clinical])
+        # merged = concatenate([vt_att, av_att, ta_att, dense_imgense_clinical])
             
         
     ## No Attention ##    
     elif mode == 'None':
             
-        merged = concatenate([dense_img, dense_snp, dense_clinical])
+        merged = concatenate([dense_img, dense_clinical])
                 
     else:
         print ("Mode must be one of 'MM_SA', 'MM_BA', 'MU_SA_BA' or 'None'.")
@@ -209,7 +209,7 @@ def multi_modal_model(mode, train_clinical, train_snp, train_img):
     ########### Output Layer ############
         
     output = Dense(3, activation='softmax')(merged)
-    model = Model([in_clinical, in_snp, in_img], output)        
+    model = Model([in_clinical, in_img], output)        
         
     return model
 
@@ -218,16 +218,17 @@ def multi_modal_model(mode, train_clinical, train_snp, train_img):
 def train(mode, batch_size, epochs, learning_rate, seed):
     
  
-    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).values
-    test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).values
+    # train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).values
+    # test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).values
 
-    
-    train_snp = pd.read_csv("X_train_snp.csv").drop("Unnamed: 0", axis=1).values
-    test_snp = pd.read_csv("X_test_snp.csv").drop("Unnamed: 0", axis=1).values
+    train_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_clinical.pkl")
+    test_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_clinical.pkl")
 
-    
-    train_img= make_img("X_train_img.pkl")
-    test_img= make_img("X_test_img.pkl")
+    # train_snp = pd.read_csv("X_train_snp.csv").drop("Unnamed: 0", axis=1).values
+    # test_snp = pd.read_csv("X_test_snp.csv").drop("Unnamed: 0", axis=1).values
+
+    train_img= make_img("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_img.pkl")
+    test_img= make_img("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_img.pkl")
 
     
     train_label= pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
@@ -238,13 +239,12 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     d_class_weights = dict(enumerate(class_weights))
     
     # compile model #
-    model = multi_modal_model(mode, train_clinical, train_snp, train_img)
+    model = multi_modal_model(mode, train_clinical, train_img)
     model.compile(optimizer=Adam(learning_rate = learning_rate), loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'])
     
 
     # summarize results
     history = model.fit([train_clinical,
-                         train_snp,
                          train_img],
                         train_label,
                         epochs=epochs,
@@ -255,10 +255,10 @@ def train(mode, batch_size, epochs, learning_rate, seed):
                         
                 
 
-    score = model.evaluate([test_clinical, test_snp, test_img], test_label)
+    score = model.evaluate([test_clinical, test_img], test_label)
     
     acc = score[1] 
-    test_predictions = model.predict([test_clinical, test_snp, test_img])
+    test_predictions = model.predict([test_clinical, test_img])
     cr, precision_d, recall_d, thres = calc_confusion_matrix(test_predictions, test_label, mode, learning_rate, batch_size, epochs)
     
     
