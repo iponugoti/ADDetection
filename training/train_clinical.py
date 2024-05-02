@@ -14,7 +14,6 @@ from sklearn.metrics import classification_report
 from tensorflow.keras.models import Sequential
 
 
-
 def reset_random_seeds(seed):
     os.environ['PYTHONHASHSEED']=str(seed)
     tf.random.set_seed(seed)
@@ -24,12 +23,12 @@ def reset_random_seeds(seed):
 
 def main():
     #this is created in the clinical preprocess jupyter notebook
-    X_train = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_clinical/X_train_c.pkl")
-    y_train = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_clinical/y_train_c.pkl")
+    print(os.getcwd())
+    X_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_train_c.pkl")
+    y_train = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_train_c.pkl")
 
-    X_test = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_clinical/X_test_c.pkl")
-    y_test = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_clinical/y_test_c.pkl")
-
+    X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
+    y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
     acc = []
     f1 = []
     precision = []
@@ -38,7 +37,7 @@ def main():
     for seed in seeds:
         reset_random_seeds(seed)
         model = Sequential()
-        model.add(Dense(128, input_shape=(185,), activation = "relu"))
+        model.add(Dense(128, input_shape = (100,), activation = "relu"))
         model.add(BatchNormalization())
         model.add(Dropout(0.5))
         model.add(Dense(64, activation = "relu"))
@@ -54,18 +53,25 @@ def main():
         model.compile(Adam(learning_rate = 0.0001), "sparse_categorical_crossentropy", metrics = ["sparse_categorical_accuracy"])
         
         model.summary()
+        
+        X_train = X_train.replace({True: 1, False: 0, np.NAN: 0})
+        y_train = y_train.replace({True: 1, False: 0.0, np.NAN: 0})
 
-        X_train = np.asarray(X_train).astype('float32')
-        y_train = np.asarray(X_train).astype('int32')
-       
-        model.fit(X_train, y_train,  epochs=100, validation_split=0.1, batch_size=32, verbose=1) 
 
-        score = model.evaluate(X_test, y_test, verbose=0)
+        history = model.fit(tf.convert_to_tensor(X_train, dtype=tf.float32), tf.convert_to_tensor(y_train, dtype=tf.float32),  epochs=100, validation_split=0.1, batch_size=32,verbose=1) 
+
+        X_test = X_test.replace({True: 1, False: 0, np.NAN: 0})
+        y_test = y_test.replace({True: 1, False: 0.0, np.NAN: 0})
+        X_test_tensor = tf.convert_to_tensor(X_test, dtype=tf.float32)
+        y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)
+
+
+        score = model.evaluate(X_test_tensor, y_test_tensor, verbose=0)
         print(f'Test loss: {score[0]} / Test accuracy: {score[1]}')
         acc.append(score[1])
         
-        test_predictions = model.predict(X_test)
-        test_label = to_categorical(y_test,3)
+        test_predictions = model.predict(X_test_tensor)
+        test_label = to_categorical(y_test_tensor,3)
 
         true_label= np.argmax(test_label, axis =1)
 
