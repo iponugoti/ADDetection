@@ -12,7 +12,7 @@ from sklearn.metrics import classification_report
 
 def reset_random_seeds(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
-    torch.random.manual_seed(seed)
+    torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
@@ -39,7 +39,8 @@ def main():
     f1 = []
     precision = []
     recall = []
-    seeds = random.sample(range(1, 200), 5)
+    
+    seeds = random.sample(range(1, 1000), 5)
     for seed in seeds:
         reset_random_seeds(seed)
         model = nn.Sequential(
@@ -56,8 +57,8 @@ def main():
             nn.BatchNorm1d(50),
             nn.Dropout(0.2),
             nn.Linear(50, 3),
-            nn.Softmax(dim=1)
         )
+        
 
 
         optimizer = optim.Adam(model.parameters(), lr=0.0001)
@@ -69,6 +70,7 @@ def main():
             optimizer.zero_grad()            
             outputs = model(X_train_tensor)
             loss = loss_function(outputs, torch.flatten(y_train_tensor.long()))
+            print(loss)
             # loss = loss_function(outputs.type(torch.LongTensor), torch.flatten(y_train_tensor.type(torch.LongTensor)))
             # loss = loss_function(outputs.type(torch.FloatTensor), torch.flatten(y_train_tensor.type(torch.FloatTensor)))
 
