@@ -23,12 +23,16 @@ def main():
     X_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/X_test_c.pkl")
     y_test = pd.read_pickle("/Users/timothypyon/Desktop/DL_Project/ADDetection/preprocess_clinical/y_test_c.pkl")
 
-    print(X_train)
     # Convert to PyTorch tensors
-    X_train_tensor = torch.from_numpy(X_train.astype(np.float32))
-    y_train_tensor = torch.from_numpy(y_train.astype(np.float32))
-    X_test_tensor = torch.from_numpy(X_test.astype(np.float32))
-    y_test_tensor = torch.from_numpy(y_test.astype(np.float32))
+    # X_train_tensor = torch.tensor(X_train.astype(np.float32))
+    # y_train_tensor = torch.from_numpy(y_train.astype(np.float32))
+    # X_test_tensor = torch.from_numpy(X_test.astype(np.float32))
+    # y_test_tensor = torch.from_numpy(y_test.astype(np.float32))
+
+    X_train_tensor = torch.tensor(X_train.values.astype(np.float32))
+    y_train_tensor = torch.tensor(y_train.values.astype(np.float32))
+    X_test_tensor = torch.tensor(X_test.values.astype(np.float32))
+    y_train_tensor = torch.tensor(y_train.values.astype(np.float32))
 
     acc = []
     f1 = []
@@ -62,14 +66,14 @@ def main():
             model.train()
             optimizer.zero_grad()
             outputs = model(X_train_tensor)
-            # print(X_train_tensor)
-            # print(X_train)
+            # print("X: ", X_train_tensor)
+            print(X_train)
 
-            # print("y: ", y_train_tensor)
+            print("y: ", y_train_tensor)
             # print("no tensor", y_train)
             print(torch.max(X_train_tensor))
             print(torch.min(X_train_tensor))
-            # print("outputs: ", outputs)
+            print("outputs: ", outputs)
             loss = loss_function(outputs.type(torch.LongTensor), torch.LongTensor(y_train_tensor))
             loss.backward()
             optimizer.step()
