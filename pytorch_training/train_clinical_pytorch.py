@@ -29,8 +29,8 @@ def main():
     X_test_post = X_test.replace({True: 1, False: 0, np.NAN: 0})
     y_test_post = y_test.replace({True: 1, False: 0.0, np.NAN: 0})
 
-    X_train_tensor = torch.tensor(X_train_post.values.astype(np.float32), requires_grad=True)
-    y_train_tensor = torch.tensor(y_train_post.values.astype(np.float32), requires_grad=True)
+    X_train_tensor = torch.tensor(X_train_post.values.astype(np.float32), requires_grad=False)
+    y_train_tensor = torch.tensor(y_train_post.values.astype(np.float32), requires_grad=False)
     X_test_tensor = torch.tensor(X_test_post.values.astype(np.float32), requires_grad=False)
     y_test_tensor = torch.tensor(y_test_post.values.astype(np.float32), requires_grad=False)
 
