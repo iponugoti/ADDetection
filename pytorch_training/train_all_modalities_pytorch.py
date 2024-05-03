@@ -59,18 +59,32 @@ class MultiModalModel(nn.Module):
     def create_img_model(self):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # model = nn.Sequential(
+        #     nn.Conv2d(72, 100, kernel_size=3, stride=1, padding=1),  # Adjust padding to maintain spatial dimensions
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2, stride=2),  # Adjust stride to halve the spatial dimensions
+        #     nn.Dropout(0.5),
+        #     nn.Conv2d(100, 50, kernel_size=3, stride=1, padding=1),  # Adjust padding to maintain spatial dimensions
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=2, stride=2),  # Adjust stride to halve the spatial dimensions
+        #     nn.Dropout(0.3),
+        #     nn.Flatten(),
+        #     nn.Linear((50 * 18 * 18), 3)  # Adjust this calculation as necessary
+        # ).to(device)
+
+
+
         model = nn.Sequential(
             nn.Conv2d(72, 100, kernel_size=3, stride=1, padding=1),  # Adjust padding to maintain spatial dimensions
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),  # Adjust stride to halve the spatial dimensions
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Conv2d(100, 50, kernel_size=3, stride=1, padding=1),  # Adjust padding to maintain spatial dimensions
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),  # Adjust stride to halve the spatial dimensions
-            nn.Dropout(0.3),
+            # nn.Dropout(0.3),
             nn.Flatten(),
-            nn.Linear(50 * 18 * 18, 3)  # Adjust this calculation as necessary
+            nn.Linear(10800, 3)  # Adjust this calculation as necessary
         ).to(device)
+
         return model
 
 
@@ -94,8 +108,13 @@ class MultiModalModel(nn.Module):
         img_output = self.img_model(img_input)
         
         if self.attention:
-            attention_output = self.attention(img_output, clinical_output)
-            merged_output = torch.cat([attention_output, img_output, clinical_output], dim=1)
+            # attention_output = self.attention(img_output, clinical_output)
+            # merged_output = torch.cat([attention_output, img_output, clinical_output], dim=1)
+            print(np.shape(img_output))
+            img_att = self.attention(img_output)
+            clin_att = self.attention(clinical_output)
+            merged_output = torch.cat([img_att, clin_att, img_output, clinical_output])
+
         else:
             merged_output = torch.cat([img_output, clinical_output], dim=1)
             
@@ -113,11 +132,15 @@ def make_img(t_img):
 def train(mode, batch_size, epochs, learning_rate, seed):
     reset_random_seeds(seed)
     
-    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
-    test_clinical = pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
+    # train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
+    # test_clinical = pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
+    """
+    For some reason Tim needs his own filepath for it to work, the commented out lines of code above should work for everyone else.
+    Same for all other filepath related things
+    """
+    train_clinical = pd.read_csv("ADDetection/pytorch_training/X_train_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
+    test_clinical = pd.read_csv("ADDetection/pytorch_training/X_test_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
     
-    # train_clinical = torch.tensor(train_clinical.values, dtype=torch.float32)
-    # test_clinical = torch.tensor(test_clinical.values, dtype=torch.float32)
 
     train_clinical_numeric = train_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
     train_clinical_tensor = torch.tensor(train_clinical_numeric.values, dtype=torch.float32)
@@ -125,12 +148,20 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     test_clinical_numeric = test_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
     test_clinical_tensor = torch.tensor(test_clinical_numeric.values, dtype=torch.float32)
 
+
+
+    # train_img = torch.tensor(make_img("X_train_img.pkl"), dtype=torch.float32) / 255.0
+    # test_img = torch.tensor(make_img("X_test_img.pkl"), dtype=torch.float32) / 255.0
+
+    train_img = torch.tensor(make_img("ADDetection/pytorch_training/img_train.pkl"), dtype=torch.float32) / 255.0
+    test_img = torch.tensor(make_img("ADDetection/pytorch_training/img_test.pkl"), dtype=torch.float32) / 255.0
+
     
-    train_img = torch.tensor(make_img("X_train_img.pkl"), dtype=torch.float32) / 255.0
-    test_img = torch.tensor(make_img("X_test_img.pkl"), dtype=torch.float32) / 255.0
-    
-    train_label = pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
-    test_label = pd.read_csv("y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+    # train_label = pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+    # test_label = pd.read_csv("y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+
+    train_label = pd.read_csv("ADDetection/pytorch_training/y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+    test_label = pd.read_csv("ADDetection/pytorch_training/y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
     
     class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(train_label), y=train_label)
     d_class_weights = dict(enumerate(class_weights))

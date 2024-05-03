@@ -19,10 +19,10 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load and preprocess data
-    X_train = pd.read_pickle("img_train.pkl")["img_array"].apply(lambda x: torch.tensor(x.transpose((2, 0, 1)), dtype=torch.float32)).tolist()
-    X_test = pd.read_pickle("img_test.pkl")["img_array"].apply(lambda x: torch.tensor(x.transpose((2, 0, 1)), dtype=torch.float32)).tolist()
-    y_train = pd.read_pickle("img_y_train.pkl")["label"].values.astype(int)
-    y_test = pd.read_pickle("img_y_test.pkl")["label"].values.astype(int)
+    X_train = pd.read_pickle("ADDetection/pytorch_training/img_train.pkl")["img_array"].apply(lambda x: torch.tensor(x.transpose((2, 0, 1)), dtype=torch.float32)).tolist()
+    X_test = pd.read_pickle("ADDetection/pytorch_training/img_test.pkl")["img_array"].apply(lambda x: torch.tensor(x.transpose((2, 0, 1)), dtype=torch.float32)).tolist()
+    y_train = pd.read_pickle("ADDetection/pytorch_training/img_y_train.pkl")["label"].values.astype(int)
+    y_test = pd.read_pickle("ADDetection/training/img_y_test.pkl")["label"].values.astype(int)
 
     # Data transformations and dataset creation
     X_train = torch.stack(X_train).to(device)

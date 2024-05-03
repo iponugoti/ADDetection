@@ -23,16 +23,16 @@ def reset_random_seeds(seed):
 
 
 def main():
-    X_train_ = pd.read_pickle("img_train.pkl")
+    X_train_ = pd.read_pickle("ADDetection/training/img_train.pkl")
     X_train_ = pd.DataFrame(X_train_)["img_array"]
 
-    X_test_ = pd.read_pickle("img_test.pkl")
+    X_test_ = pd.read_pickle("ADDetection/training/img_test.pkl")
     X_test_ = pd.DataFrame(X_test_)["img_array"]
 
-    y_train = pd.read_pickle("img_y_train.pkl")
+    y_train = pd.read_pickle("ADDetection/training/img_y_train.pkl")
     y_train = y_train["label"].astype(np.float32).values.flatten()
 
-    y_test = pd.read_pickle("img_y_test.pkl")
+    y_test = pd.read_pickle("ADDetection/training/img_y_test.pkl")
     y_test = y_test["label"].astype(np.float32).values.flatten()
 
     print("Unique labels in training data:", np.unique(y_train))
