@@ -37,20 +37,20 @@ def reset_random_seeds(seed):
     random.seed(seed)
    
                
-def create_model_snp():
+# def create_model_snp():
     
-    model = Sequential()
-    model.add(Dense(200,  activation = "relu")) 
-    model.add(BatchNormalization())
-    model.add(Dropout(0.5))
-    model.add(Dense(100, activation = "relu"))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.3))
+#     model = Sequential()
+#     model.add(Dense(200,  activation = "relu")) 
+#     model.add(BatchNormalization())
+#     model.add(Dropout(0.5))
+#     model.add(Dense(100, activation = "relu"))
+#     model.add(BatchNormalization())
+#     model.add(Dropout(0.3))
     
-    model.add(Dense(50, activation = "relu"))
-    model.add(BatchNormalization())
-    model.add(Dropout(0.2))
-    return model
+#     model.add(Dense(50, activation = "relu"))
+#     model.add(BatchNormalization())
+#     model.add(Dropout(0.2))
+#     return model
 
 def create_model_clinical():
     
@@ -68,8 +68,6 @@ def create_model_clinical():
     return model
 
 def create_model_img():
-    
-    
     
     model = Sequential()
     model.add(Conv2D(72, (3, 3), activation='relu')) 
@@ -150,7 +148,9 @@ def multi_modal_model(mode, train_clinical, train_img):
     
     # in_snp = Input(shape=(train_snp.shape[1]))
     
-    in_img = Input(shape=(train_img.shape[1], train_img.shape[2], train_img.shape[3]))
+    # in_img = Input(shape=(train_img.shape[1], train_img.shape[2], train_img.shape[3]))
+
+    in_img = Input(shape=(train_img.shape[0]))
     
     dense_clinical = create_model_clinical()(in_clinical)
     # dense_snp = create_model_snp()(in_snp) 
@@ -218,17 +218,17 @@ def multi_modal_model(mode, train_clinical, train_img):
 def train(mode, batch_size, epochs, learning_rate, seed):
     
  
-    # train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).values
-    # test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).values
+    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).values
+    test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).values
 
-    train_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_clinical.pkl")
-    test_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_clinical.pkl")
+    # train_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_clinical.pkl")
+    # test_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_clinical.pkl")
 
     # train_snp = pd.read_csv("X_train_snp.csv").drop("Unnamed: 0", axis=1).values
     # test_snp = pd.read_csv("X_test_snp.csv").drop("Unnamed: 0", axis=1).values
 
-    train_img= make_img("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_img.pkl")
-    test_img= make_img("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_img.pkl")
+    train_img= make_img("X_train_img.pkl")
+    test_img= make_img("X_test_img.pkl")
 
     
     train_label= pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
