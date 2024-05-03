@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import pandas as pd
-import pickle5 as pickle
+import pickle as pickle
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
@@ -24,23 +24,25 @@ def reset_random_seeds(seed):
 
 def main():
     
-    with open("img_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
+    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_train.pkl", "rb") as fh:
+        data = pd.read_pickle(fh)
     X_train_ = pd.DataFrame(data)["img_array"] 
     
-    with open("img_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
+    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_test.pkl", "rb") as fh:
+        data = pd.read_pickle(fh)
     X_test_ = pd.DataFrame(data)["img_array"]
     
-    with open("img_y_train.pkl", "rb") as fh:
-        data = pickle.load(fh)
+    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_y_train.pkl", "rb") as fh:
+        data = pd.read_pickle(fh)
     y_train = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
     
-    with open("img_y_test.pkl", "rb") as fh:
-        data = pickle.load(fh)
+    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_y_test.pkl", "rb") as fh:
+        data = pd.read_pickle(fh)
     y_test = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
     
 
+
+    # print("pre: ", y_train)
     y_test[y_test == 2] = -1
     y_test[y_test == 1] = 2
     y_test[y_test == -1] = 1
@@ -48,11 +50,12 @@ def main():
     y_train[y_train == 2] = -1
     y_train[y_train == 1] = 2
     y_train[y_train == -1] = 1
-    
+    # print("post: ", y_train)
 
     X_train = []
     X_test = []
     
+    # print(X_train)
     for i in range(len(X_train_)):
         X_train.append(X_train_.values[i])
         
@@ -79,7 +82,7 @@ def main():
         model.add(MaxPooling2D((2, 2)))
         model.add(Dropout(0.3))
         model.add(Flatten())
-        model.add(Dense(3, activation = "softmax"))
+        model.add(Dense(6, activation = "softmax"))
         
         
         model.compile(Adam(learning_rate = 0.001), "sparse_categorical_crossentropy", metrics = ["sparse_categorical_accuracy"])
@@ -87,6 +90,7 @@ def main():
         model.summary()
         
     
+
         history = model.fit(X_train, y_train, epochs=50, batch_size=32,validation_split=0.1, verbose=1) 
         
         score = model.evaluate(X_test, y_test, verbose=0)
