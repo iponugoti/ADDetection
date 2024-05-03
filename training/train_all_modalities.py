@@ -21,54 +21,41 @@ config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth=True
 sess = tf.compat.v1.Session(config=config)
 
+### OLD MODEL
 def make_img(t_img):
-    img = pd.read_pickle(t_img)
-    img_l = []
-    for i in range(len(img)):
-        img_l.append(img.values[i][0])
-    
-    return np.array(img_l)
-
+    X_train_ = pd.read_pickle(t_img)
+    X_train_ = pd.DataFrame(X_train_)["img_array"]
+    X_train = []
+    for i in range(len(X_train_)):
+        X_train.append(X_train_.values[i])
+    return np.array(X_train)
 
 def reset_random_seeds(seed):
     os.environ['PYTHONHASHSEED']=str(seed)
     tf.random.set_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-   
-               
-# def create_model_snp():
-    
-#     model = Sequential()
-#     model.add(Dense(200,  activation = "relu")) 
-#     model.add(BatchNormalization())
-#     model.add(Dropout(0.5))
-#     model.add(Dense(100, activation = "relu"))
-#     model.add(BatchNormalization())
-#     model.add(Dropout(0.3))
-    
-#     model.add(Dense(50, activation = "relu"))
-#     model.add(BatchNormalization())
-#     model.add(Dropout(0.2))
-#     return model
 
 def create_model_clinical():
-    
     model = Sequential()
-    model.add(Dense(200,  activation = "relu")) 
+    model.add(Dense(128, input_shape = (101,), activation = "relu"))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
-    model.add(Dense(100, activation = "relu"))
+    model.add(Dense(64, activation = "relu"))
     model.add(BatchNormalization())
     model.add(Dropout(0.3))
     
     model.add(Dense(50, activation = "relu"))
     model.add(BatchNormalization())
-    model.add(Dropout(0.2))    
+    model.add(Dropout(0.2))
+    
+    model.add(Dense(3, activation = "softmax"))
+    
+    model.compile(Adam(learning_rate = 0.0001), "sparse_categorical_crossentropy", metrics = ["sparse_categorical_accuracy"])
+         
     return model
 
 def create_model_img():
-    
     model = Sequential()
     model.add(Conv2D(72, (3, 3), activation='relu')) 
     model.add(Conv2D(64, (3, 3), activation='relu'))
@@ -76,7 +63,6 @@ def create_model_img():
     model.add(Flatten())
     model.add(Dense(50, activation='relu'))   
     return model
-
 
 def plot_classification_report(y_tru, y_prd, mode, learning_rate, batch_size,epochs, figsize=(7, 7), ax=None):
 
@@ -145,69 +131,47 @@ def self_attention(x):
 def multi_modal_model(mode, train_clinical, train_img):
     
     in_clinical = Input(shape=(train_clinical.shape[1]))
-    
-    # in_snp = Input(shape=(train_snp.shape[1]))
-    
-    # in_img = Input(shape=(train_img.shape[1], train_img.shape[2], train_img.shape[3]))
 
-    in_img = Input(shape=(train_img.shape[0]))
-    
+    in_img = Input(shape=(train_img.shape[1], train_img.shape[2], train_img.shape[3]))
     dense_clinical = create_model_clinical()(in_clinical)
-    # dense_snp = create_model_snp()(in_snp) 
     dense_img = create_model_img()(in_img) 
     
  
-        
     ########### Attention Layer ############
         
     ## Cross Modal Bi-directional Attention ##
-
     if mode == 'MM_BA':
-            
         vt_att = cross_modal_attention(dense_img, dense_clinical)
-        # av_att = cross_modal_attention(dense_snp, dense_img)
-        # ta_att = cross_modal_attention(dense_clinical, dense_snp)
-                
-        merged = concatenate([vt_att, av_att, ta_att, dense_img, dense_clinical])
-                 
-   
+        merged = concatenate([vt_att, dense_img, dense_clinical])
         
         
     ## Self Attention ##
-    elif mode == 'MM_SA':
-            
+    elif mode == 'MM_SA':    
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        # aa_att = self_attention(dense_snp)
             
         merged = concatenate([vv_att, tt_att, dense_img, dense_clinical])
         
     ## Self Attention and Cross Modal Bi-directional Attention##
-    elif mode == 'MM_SA_BA':
-            
+    elif mode == 'MM_SA_BA':      
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        # aa_att = self_attention(dense_snp)
         
         vt_att = cross_modal_attention(vv_att, tt_att)
-        # av_att = cross_modal_attention(aa_att, vv_att)
-        # ta_att = cross_modal_attention(tt_att, aa_att)
-            
-        # merged = concatenate([vt_att, av_att, ta_att, dense_imgense_clinical])
+             
+        merged = concatenate([vt_att, dense_img, dense_clinical])
             
         
     ## No Attention ##    
     elif mode == 'None':
-            
         merged = concatenate([dense_img, dense_clinical])
                 
     else:
-        print ("Mode must be one of 'MM_SA', 'MM_BA', 'MU_SA_BA' or 'None'.")
+        print ("Mode must be one of 'MM_SA', 'MM_BA', 'MM_SA_BA' or 'None'.")
         return
                 
         
     ########### Output Layer ############
-        
     output = Dense(3, activation='softmax')(merged)
     model = Model([in_clinical, in_img], output)        
         
@@ -216,20 +180,20 @@ def multi_modal_model(mode, train_clinical, train_img):
 
 
 def train(mode, batch_size, epochs, learning_rate, seed):
-    
- 
-    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1).values
-    test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1).values
+    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1)
+    train_clinical = train_clinical.set_index('subject')
 
-    # train_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_train_clinical.pkl")
-    # test_clinical = pd.read_pickle("/Users/raimaazrafiislam/Desktop/SPRING 2024/CSCI 1470/ADDetection/preprocess_overlap/X_test_clinical.pkl")
+    test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1)
+    test_clinical = test_clinical.set_index('subject')
 
-    # train_snp = pd.read_csv("X_train_snp.csv").drop("Unnamed: 0", axis=1).values
-    # test_snp = pd.read_csv("X_test_snp.csv").drop("Unnamed: 0", axis=1).values
+    train_clinical = train_clinical.replace({True: 1, False: 0, np.NAN: 0})
+    test_clinical = test_clinical.replace({True: 1, False: 0.0, np.NAN: 0})
+
+    train_clinical = train_clinical.astype(np.float32)
+    test_clinical = test_clinical.astype(np.float32)
 
     train_img= make_img("X_train_img.pkl")
     test_img= make_img("X_test_img.pkl")
-
     
     train_label= pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
     test_label= pd.read_csv("y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
@@ -304,14 +268,14 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     
     
 if __name__=="__main__":
-    
     m_a = {}
-    seeds = random.sample(range(1, 200), 5)
-    for s in seeds:
-        acc, bs_, lr_, e_ , seed= train('MM_SA_BA', 32, 50, 0.001, s)
-        m_a[acc] = ('MM_SA_BA', acc, bs_, lr_, e_, seed)
-    print(m_a)
-    print ('-'*55)
-    max_acc = max(m_a, key=float)
+    types = ['MM_SA', 'MM_BA', 'MM_SA_BA', 'None']
+    for t in types:
+        seeds = random.sample(range(1, 200), 5)
+        for s in seeds:
+            acc, bs_, lr_, e_ , seed= train(t, 32, 50, 0.001, s)
+            m_a[acc] = (t, acc, bs_, lr_, e_, seed)
+        print(m_a)
+        print ('-'*55)
+        max_acc = max(m_a, key=float)
     print("Highest accuracy of: " + str(max_acc) + " with parameters: " + str(m_a[max_acc]))
-    
