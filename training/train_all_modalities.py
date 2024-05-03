@@ -146,25 +146,19 @@ def multi_modal_model(mode, train_clinical, train_img):
         
         
     ## Self Attention ##
-    elif mode == 'MM_SA':
-            
+    elif mode == 'MM_SA':    
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        # aa_att = self_attention(dense_snp)
             
         merged = concatenate([vv_att, tt_att, dense_img, dense_clinical])
         
     ## Self Attention and Cross Modal Bi-directional Attention##
-    elif mode == 'MM_SA_BA':
-            
+    elif mode == 'MM_SA_BA':      
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        # aa_att = self_attention(dense_snp)
         
         vt_att = cross_modal_attention(vv_att, tt_att)
-        # av_att = cross_modal_attention(aa_att, vv_att)
-        # ta_att = cross_modal_attention(tt_att, aa_att)
-            
+             
         merged = concatenate([vt_att, dense_img, dense_clinical])
             
         
@@ -173,12 +167,11 @@ def multi_modal_model(mode, train_clinical, train_img):
         merged = concatenate([dense_img, dense_clinical])
                 
     else:
-        print ("Mode must be one of 'MM_SA', 'MM_BA', 'MU_SA_BA' or 'None'.")
+        print ("Mode must be one of 'MM_SA', 'MM_BA', 'MM_SA_BA' or 'None'.")
         return
                 
         
     ########### Output Layer ############
-        
     output = Dense(3, activation='softmax')(merged)
     model = Model([in_clinical, in_img], output)        
         
@@ -196,7 +189,6 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     train_clinical = train_clinical.replace({True: 1, False: 0, np.NAN: 0})
     test_clinical = test_clinical.replace({True: 1, False: 0.0, np.NAN: 0})
 
-    print(train_clinical.head())
     train_clinical = train_clinical.astype(np.float32)
     test_clinical = test_clinical.astype(np.float32)
 
@@ -277,11 +269,13 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     
 if __name__=="__main__":
     m_a = {}
-    seeds = random.sample(range(1, 200), 5)
-    for s in seeds:
-        acc, bs_, lr_, e_ , seed= train('None', 32, 50, 0.001, s)
-        m_a[acc] = ('None', acc, bs_, lr_, e_, seed)
-    print(m_a)
-    print ('-'*55)
-    max_acc = max(m_a, key=float)
+    types = ['MM_SA', 'MM_BA', 'MM_SA_BA', 'None']
+    for t in types:
+        seeds = random.sample(range(1, 200), 5)
+        for s in seeds:
+            acc, bs_, lr_, e_ , seed= train(t, 32, 50, 0.001, s)
+            m_a[acc] = (t, acc, bs_, lr_, e_, seed)
+        print(m_a)
+        print ('-'*55)
+        max_acc = max(m_a, key=float)
     print("Highest accuracy of: " + str(max_acc) + " with parameters: " + str(m_a[max_acc]))
