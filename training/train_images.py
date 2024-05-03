@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import pandas as pd
-import pickle as pickle
+# import pickle5 as pickle
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from tensorflow.keras.utils import to_categorical
@@ -23,23 +23,20 @@ def reset_random_seeds(seed):
 
 
 def main():
-    
-    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_train.pkl", "rb") as fh:
-        data = pd.read_pickle(fh)
-    X_train_ = pd.DataFrame(data)["img_array"] 
-    
-    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_test.pkl", "rb") as fh:
-        data = pd.read_pickle(fh)
-    X_test_ = pd.DataFrame(data)["img_array"]
-    
-    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_y_train.pkl", "rb") as fh:
-        data = pd.read_pickle(fh)
-    y_train = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
-    
-    with open("/Users/timothypyon/Desktop/DL_Project/ADDetection/training/img_y_test.pkl", "rb") as fh:
-        data = pd.read_pickle(fh)
-    y_test = np.array(pd.DataFrame(data)["label"].values.astype(np.float32)).flatten()
-    
+    X_train_ = pd.read_pickle("img_train.pkl")
+    X_train_ = pd.DataFrame(X_train_)["img_array"]
+
+    X_test_ = pd.read_pickle("img_test.pkl")
+    X_test_ = pd.DataFrame(X_test_)["img_array"]
+
+    y_train = pd.read_pickle("img_y_train.pkl")
+    y_train = y_train["label"].astype(np.float32).values.flatten()
+
+    y_test = pd.read_pickle("img_y_test.pkl")
+    y_test = y_test["label"].astype(np.float32).values.flatten()
+
+    print("Unique labels in training data:", np.unique(y_train))
+    print("Unique labels in testing data:", np.unique(y_test))
 
 
     # print("pre: ", y_train)
@@ -51,6 +48,9 @@ def main():
     y_train[y_train == 1] = 2
     y_train[y_train == -1] = 1
     # print("post: ", y_train)
+    
+    print("Unique labels in training data:", np.unique(y_train))
+    print("Unique labels in testing data:", np.unique(y_test))
 
     X_train = []
     X_test = []
@@ -82,7 +82,7 @@ def main():
         model.add(MaxPooling2D((2, 2)))
         model.add(Dropout(0.3))
         model.add(Flatten())
-        model.add(Dense(6, activation = "softmax"))
+        model.add(Dense(3, activation = "softmax")) #there should only be 3 classes tho hmmm
         
         
         model.compile(Adam(learning_rate = 0.001), "sparse_categorical_crossentropy", metrics = ["sparse_categorical_accuracy"])
