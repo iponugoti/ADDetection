@@ -151,15 +151,21 @@ def multi_modal_model(mode, train_clinical, train_img):
         tt_att = self_attention(dense_clinical)
             
         merged = concatenate([vv_att, tt_att, dense_img, dense_clinical])
+        print(np.shape(dense_img))
+        print(np.shape(dense_clinical))
+
+        print(np.shape(vv_att))
+        print(np.shape(tt_att))
         
     ## Self Attention and Cross Modal Bi-directional Attention##
     elif mode == 'MM_SA_BA':      
         vv_att = self_attention(dense_img)
         tt_att = self_attention(dense_clinical)
-        
+
         vt_att = cross_modal_attention(vv_att, tt_att)
              
         merged = concatenate([vt_att, dense_img, dense_clinical])
+        
             
         
     ## No Attention ##    
@@ -170,9 +176,12 @@ def multi_modal_model(mode, train_clinical, train_img):
         print ("Mode must be one of 'MM_SA', 'MM_BA', 'MM_SA_BA' or 'None'.")
         return
                 
-        
+    
+
     ########### Output Layer ############
     output = Dense(3, activation='softmax')(merged)
+    # print(np.shape(merged))
+    # print(np.shape(output))
     model = Model([in_clinical, in_img], output)        
         
     return model
@@ -180,10 +189,10 @@ def multi_modal_model(mode, train_clinical, train_img):
 
 
 def train(mode, batch_size, epochs, learning_rate, seed):
-    train_clinical = pd.read_csv("X_train_clinical.csv").drop("Unnamed: 0", axis=1)
+    train_clinical = pd.read_csv("ADDetection/pytorch_training/X_train_clinical.csv").drop("Unnamed: 0", axis=1)
     train_clinical = train_clinical.set_index('subject')
 
-    test_clinical= pd.read_csv("X_test_clinical.csv").drop("Unnamed: 0", axis=1)
+    test_clinical= pd.read_csv("ADDetection/pytorch_training/X_test_clinical.csv").drop("Unnamed: 0", axis=1)
     test_clinical = test_clinical.set_index('subject')
 
     train_clinical = train_clinical.replace({True: 1, False: 0, np.NAN: 0})
@@ -192,19 +201,25 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     train_clinical = train_clinical.astype(np.float32)
     test_clinical = test_clinical.astype(np.float32)
 
-    train_img= make_img("X_train_img.pkl")
-    test_img= make_img("X_test_img.pkl")
+    train_img= make_img("ADDetection/pytorch_training/X_train_img.pkl")
+    test_img= make_img("ADDetection/pytorch_training/X_test_img.pkl")
     
-    train_label= pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
-    test_label= pd.read_csv("y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+    train_label= pd.read_csv("ADDetection/pytorch_training/y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
+    test_label= pd.read_csv("ADDetection/pytorch_training/y_test.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
 
     reset_random_seeds(seed)
     class_weights = compute_class_weight(class_weight = 'balanced',classes = np.unique(train_label),y = train_label)
     d_class_weights = dict(enumerate(class_weights))
     
+
+
+    # print("clin:", np.shape(train_clinical))
+    # print("img:", np.shape(train_img))
+    # print("label:", np.shape(train_label))
     # compile model #
     model = multi_modal_model(mode, train_clinical, train_img)
     model.compile(optimizer=Adam(learning_rate = learning_rate), loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'])
+    
     
 
     # summarize results

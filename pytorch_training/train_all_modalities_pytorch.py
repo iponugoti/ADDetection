@@ -35,7 +35,9 @@ class MultiModalModel(nn.Module):
         else:
             self.attention = None
         
-        self.fc = nn.Linear(150, 3)  # Adjust the input size based on attention mechanism
+        # self.fc = nn.Linear(150, 3)  # Adjust the input size based on attention mechanism
+        self.fc = nn.Linear(50, 3)  # Adjust the input size based on attention mechanism
+
 
     def create_clinical_model(self, input_size=9):
        
@@ -52,7 +54,7 @@ class MultiModalModel(nn.Module):
                 nn.ReLU(),
                 nn.BatchNorm1d(50),
                 nn.Dropout(0.2),
-                nn.Linear(50, 3),
+                nn.Linear(50, 50),
             )
             return model
 
@@ -82,7 +84,7 @@ class MultiModalModel(nn.Module):
             nn.ReLU(),
             # nn.Dropout(0.3),
             nn.Flatten(),
-            nn.Linear(10800, 3)  # Adjust this calculation as necessary
+            nn.Linear(10800, 50)  # Adjust this calculation as necessary
         ).to(device)
 
         return model
@@ -99,7 +101,7 @@ class MultiModalModel(nn.Module):
 
     def self_attention(self, x):
         x = x.unsqueeze(1)
-        attention = nn.MultiheadAttention(50, num_heads=4)(x, x)[0]
+        attention = nn.MultiheadAttention(50, num_heads=5)(x, x, x)[0]
         attention = attention[:, 0, :]
         return attention
 
@@ -110,14 +112,18 @@ class MultiModalModel(nn.Module):
         if self.attention:
             # attention_output = self.attention(img_output, clinical_output)
             # merged_output = torch.cat([attention_output, img_output, clinical_output], dim=1)
-            print(np.shape(img_output))
+            
             img_att = self.attention(img_output)
             clin_att = self.attention(clinical_output)
+            # print("img: ", np.shape(img_att))
+            # print("clin: ", np.shape(clin_att))
             merged_output = torch.cat([img_att, clin_att, img_output, clinical_output])
+            # print("merged: ", np.shape(merged_output))
 
         else:
             merged_output = torch.cat([img_output, clinical_output], dim=1)
             
+        # print(np.shape(merged_output))
         output = self.fc(merged_output)
         return output
 
@@ -138,7 +144,8 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     For some reason Tim needs his own filepath for it to work, the commented out lines of code above should work for everyone else.
     Same for all other filepath related things
     """
-    train_clinical = pd.read_csv("ADDetection/pytorch_training/X_train_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
+    train_clinical = pd.read_csv("ADDetection/pytorch_training/X_train_clinical.csv").drop("Unnamed: 0", axis=1)
+    train_clinical = train_clinical.set_index('subject')
     test_clinical = pd.read_csv("ADDetection/pytorch_training/X_test_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
     
 
@@ -153,8 +160,8 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     # train_img = torch.tensor(make_img("X_train_img.pkl"), dtype=torch.float32) / 255.0
     # test_img = torch.tensor(make_img("X_test_img.pkl"), dtype=torch.float32) / 255.0
 
-    train_img = torch.tensor(make_img("ADDetection/pytorch_training/img_train.pkl"), dtype=torch.float32) / 255.0
-    test_img = torch.tensor(make_img("ADDetection/pytorch_training/img_test.pkl"), dtype=torch.float32) / 255.0
+    train_img = torch.tensor(make_img("ADDetection/pytorch_training/X_train_img.pkl"), dtype=torch.float32) / 255.0
+    test_img = torch.tensor(make_img("ADDetection/pytorch_training/X_test_img.pkl"), dtype=torch.float32) / 255.0
 
     
     # train_label = pd.read_csv("y_train.csv").drop("Unnamed: 0", axis=1).values.astype("int").flatten()
@@ -174,6 +181,8 @@ def train(mode, batch_size, epochs, learning_rate, seed):
         model.train()
         optimizer.zero_grad()
         outputs = model(train_clinical_tensor, train_img)
+        
+        
         loss = loss_function(outputs, torch.tensor(train_label, dtype=torch.long))
         loss.backward()
         optimizer.step()
