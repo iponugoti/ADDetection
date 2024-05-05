@@ -26,23 +26,28 @@ class MultiModalModel(nn.Module):
         self.clinical_model = self.create_clinical_model()
         self.img_model = self.create_img_model()
         
-        if self.mode == 'MM_BA':
-            self.attention = self.cross_modal_attention
-        elif self.mode == 'MM_SA':
-            self.attention = self.self_attention
-        elif self.mode == 'MM_SA_BA':
-            self.attention = self.self_cross_modal_attention
+        # if self.mode == 'MM_BA':
+        #     self.attention = self.cross_modal_attention
+        # elif self.mode == 'MM_SA':
+        #     self.attention = self.self_attention
+        # elif self.mode == 'MM_SA_BA':
+        #     self.attention = self.self_cross_modal_attention
+        # else:
+        #     self.attention = None
+        if self.mode == "None":
+            self.attention = False
         else:
-            self.attention = None
+            self.attention = True
         
         # self.fc = nn.Linear(150, 3)  # Adjust the input size based on attention mechanism
-        self.fc = nn.Linear(50, 3)  # Adjust the input size based on attention mechanism
+        self.fc = nn.Linear(200, 3)  # Adjust the input size based on attention mechanism
+        self.fc_none = nn.Linear(100, 3)
 
 
     def create_clinical_model(self, input_size=9):
        
             model = nn.Sequential(
-                nn.Linear(9, 84),
+                nn.Linear(101, 84),
                 nn.ReLU(),
                 nn.BatchNorm1d(84),
                 nn.Dropout(0.5),
@@ -54,7 +59,7 @@ class MultiModalModel(nn.Module):
                 nn.ReLU(),
                 nn.BatchNorm1d(50),
                 nn.Dropout(0.2),
-                nn.Linear(50, 50),
+                nn.Linear(50, 50)
             )
             return model
 
@@ -93,8 +98,8 @@ class MultiModalModel(nn.Module):
     def cross_modal_attention(self, x, y):
         x = x.unsqueeze(1)
         y = y.unsqueeze(1)
-        a1 = nn.MultiheadAttention(50, num_heads=4)(x, y)[0]
-        a2 = nn.MultiheadAttention(50, num_heads=4)(y, x)[0]
+        a1 = nn.MultiheadAttention(50, num_heads=5)(x, y, y)[0]
+        a2 = nn.MultiheadAttention(50, num_heads=5)(y, x, x)[0]
         a1 = a1[:, 0, :]
         a2 = a2[:, 0, :]
         return torch.cat([a1, a2], dim=1)
@@ -106,25 +111,32 @@ class MultiModalModel(nn.Module):
         return attention
 
     def forward(self, clinical_input, img_input):
+        
         clinical_output = self.clinical_model(clinical_input)
         img_output = self.img_model(img_input)
+
         
         if self.attention:
-            # attention_output = self.attention(img_output, clinical_output)
-            # merged_output = torch.cat([attention_output, img_output, clinical_output], dim=1)
-            
-            img_att = self.attention(img_output)
-            clin_att = self.attention(clinical_output)
-            # print("img: ", np.shape(img_att))
-            # print("clin: ", np.shape(clin_att))
-            merged_output = torch.cat([img_att, clin_att, img_output, clinical_output])
-            # print("merged: ", np.shape(merged_output))
+            if self.mode == "MM_SA":
+                img_att = self.self_attention(img_output)
+                clin_att = self.self_attention(clinical_output)
+                merged_output = torch.cat([img_att, clin_att, img_output, clinical_output], dim=1)
+            elif self.mode == "MM_BA":
+                vt_att = self.cross_modal_attention(img_output, clinical_output)
+                merged_output = torch.cat([vt_att, img_output, clinical_output], dim=1)
 
+            elif self.mode == 'MM_SA_BA':      
+                vv_att = self.self_attention(img_output)
+                tt_att = self.self_attention(clinical_output)
+
+                vt_att = self.cross_modal_attention(vv_att, tt_att)
+                    
+                merged_output = torch.cat([vt_att, img_output, clinical_output], dim=1)
+            output = self.fc(merged_output)
         else:
             merged_output = torch.cat([img_output, clinical_output], dim=1)
-            
-        # print(np.shape(merged_output))
-        output = self.fc(merged_output)
+            output = self.fc_none(merged_output)
+
         return output
 
 def make_img(t_img):
@@ -148,12 +160,32 @@ def train(mode, batch_size, epochs, learning_rate, seed):
     train_clinical = train_clinical.set_index('subject')
     test_clinical = pd.read_csv("ADDetection/pytorch_training/X_test_clinical.csv").drop("Unnamed: 0", axis=1).set_index('subject')
     
+    # print("pre:", np.shape(train_clinical))
+    # train_clinical_numeric = train_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
 
-    train_clinical_numeric = train_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
-    train_clinical_tensor = torch.tensor(train_clinical_numeric.values, dtype=torch.float32)
+    
 
-    test_clinical_numeric = test_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
-    test_clinical_tensor = torch.tensor(test_clinical_numeric.values, dtype=torch.float32)
+
+
+    # print("post:", np.shape(train_clinical_numeric))
+    # train_clinical_tensor = torch.tensor(train_clinical_numeric.values, dtype=torch.float32)
+
+    # test_clinical_numeric = test_clinical.select_dtypes(include=[np.number])  # Select only numeric columns
+    # test_clinical_tensor = torch.tensor(test_clinical_numeric.values, dtype=torch.float32)
+
+
+    train_clinical_replaced = train_clinical.replace({True: 1, False: 0, np.NAN: 0})
+    # y_train_post = y_train.replace({True: 1, False: 0.0, np.NAN: 0})
+
+    test_clinical_replaced = test_clinical.replace({True: 1, False: 0, np.NAN: 0})
+    # y_test_post = y_test.replace({True: 1, False: 0.0, np.NAN: 0})
+
+
+
+
+    train_clinical_tensor = torch.tensor(train_clinical_replaced.values.astype(np.float32), requires_grad=False)
+    test_clinical_tensor = torch.tensor(test_clinical_replaced.values.astype(np.float32), requires_grad=False)
+
 
 
 
@@ -182,10 +214,13 @@ def train(mode, batch_size, epochs, learning_rate, seed):
         optimizer.zero_grad()
         outputs = model(train_clinical_tensor, train_img)
         
-        
+        # print("outputs:", outputs)
+        # print("train_label:", train_label)
         loss = loss_function(outputs, torch.tensor(train_label, dtype=torch.long))
+        
         loss.backward()
         optimizer.step()
+        
 
         print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}")
     
@@ -195,6 +230,16 @@ def train(mode, batch_size, epochs, learning_rate, seed):
         _, predicted = torch.max(outputs, 1)
         total = predicted.size(0)
         correct = (predicted == torch.tensor(test_label, dtype=torch.long)).sum().item()
+        count = 0
+        num_right = 0
+        for x in predicted:
+            if x == train_label[count]:
+                num_right+=1
+            count+=1
+        correct = num_right
+        # correct = (predicted == y_test_tensor).sum().item()
+        # print(correct/total)
+        
         acc = correct / total
 
         cr = classification_report(test_label, predicted.numpy(), output_dict=True)
@@ -212,7 +257,7 @@ if __name__ == "__main__":
     for t in types:
         seeds = random.sample(range(1, 200), 5)
         for s in seeds:
-            acc, bs_, lr_, e_, seed = train(t, 32, 50, 0.001, s)
+            acc, bs_, lr_, e_, seed = train(t, 32, 100, 0.001, s)
             m_a[acc] = (t, acc, bs_, lr_, e_, seed)
         print(m_a)
         print('-' * 55)
