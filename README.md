@@ -7,7 +7,7 @@ Our paper and model provides results on the [Alzheimer's Disease Neuroimaging In
 ## Description
 In this work, we presented a multi-modal, multi-class, attention-based deep learning framework to detect Alzheimer's disease using clinical and imaging (MRI) data from ADNI.
 
-This repository contains the code both in TensorFlow (an edited version of the original research paper's ADNI model)and a PyTorch model (our final model that we worked on from scratch). This model architecture above is located in pytorch_training/train_all_modalities.py. 
+This repository contains the code both in TensorFlow (adapted from the MADDi model) and a PyTorch model (our final model that we implemented from scratch). Our final multimodal model is located in pytorch_training/train_all_modalities.py. 
 
 ## Preprocessing
 To preprocess data, run the jupyter notebooks on ADNI data in the following order:
