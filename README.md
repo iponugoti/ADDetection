@@ -25,6 +25,6 @@ The original paper as well as some of the structure in this repo was adopted fro
 
 ## Authors
 [Isha Ponugoti](https://github.com/iponugoti)
+[Karis Ma](https://github.com/karismajn)
 [Raima Islam](https://github.com/raimaaislam)
 [Timothy Pyon](https://github.com/timothypyon)
-[Karis Ma](https://github.com/karismajn)
